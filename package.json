@@ -1,0 +1,49 @@
+{
+  "name": "ime-prompt",
+  "displayName": "IME Prompt",
+  "description": "日本語IME対応のプロンプト入力支援ツール - Claude Code風の/コマンドと@メンション機能",
+  "version": "0.1.0",
+  "publisher": "default",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onCommand:ime-prompt.open"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ime-prompt.open",
+        "title": "IME Prompt: プロンプト入力を開く"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "ime-prompt.open",
+        "key": "ctrl+shift+i",
+        "mac": "cmd+shift+i"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0",
+    "typescript": "^5.3.0"
+  },
+  "dependencies": {}
+}

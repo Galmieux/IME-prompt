@@ -4,162 +4,289 @@
 
 ## プロジェクトの目的
 
-このリポジトリは、Prompt Line アプリケーションの日本語IME（Input Method Editor）対応を改善するためのフォークプロジェクトです。
+このプロジェクトは、Windows環境で動作するVS Code拡張機能として、日本語IME（Input Method Editor）に完全対応したプロンプト入力支援ツールを提供します。
 
 ### 主な目標
-- **日本語IME互換性の向上**: 日本語入力時の動作を最適化し、より自然な日本語入力体験を提供
-- **日本語ワークフローへの対応**: 日本語での開発・執筆作業に特化した機能の追加
-- **日本語開発ツールとの連携**: 日本語環境で使用される各種エディタやツールとの統合改善
-- **Claude Code風のコマンド機能**: `/コマンド` と `@メンション` による高度な入力支援機能の実装
+- **日本語IME互換性の実現**: Windows環境での日本語入力を完全サポート
+- **Claude Code風のUX**: `/コマンド` と `@メンション` による高度な入力支援機能
+- **VS Code統合**: ネイティブなVS Code拡張機能としてシームレスに動作
+- **Webview UI**: モダンでレスポンシブなUI/UX
 
-## リポジトリ構造
+## プロジェクト構造
 
 ```
 IME-prompt/
-├── .git/                 # Gitリポジトリデータ
-├── forked-repo/         # オリジナルのPrompt Lineコードベース（nkmr-jp/prompt-lineからフォーク）
-│   ├── src/            # ソースコード
-│   ├── native/         # ネイティブSwiftツール
-│   ├── tests/          # テストファイル
-│   ├── build/          # ビルド設定
-│   ├── assets/         # アプリケーションアセット
-│   ├── CLAUDE.md       # Prompt Line本体の開発ガイド（英語）
-│   └── ...             # その他のプロジェクトファイル
-└── CLAUDE.md           # このファイル（プロジェクト全体の日本語ガイド）
+├── .vscode/                      # VS Code設定
+│   ├── launch.json              # デバッグ設定
+│   └── tasks.json               # タスク設定
+├── src/                          # ソースコード
+│   ├── extension.ts             # 拡張機能のエントリポイント
+│   └── webview/
+│       └── PromptWebviewProvider.ts  # Webview UI実装
+├── out/                          # コンパイル済みファイル（.gitignore）
+├── forked-repo/                  # 参考用：Prompt Line オリジナルコード
+│   └── (macOS Electronアプリの実装)
+├── package.json                  # 拡張機能マニフェスト
+├── tsconfig.json                 # TypeScript設定
+├── README.md                     # プロジェクト概要
+└── CLAUDE.md                     # このファイル
 ```
 
-## forked-repoディレクトリとの関係
+## 技術スタック
 
-### ディレクトリの役割
-- **ルートディレクトリ (IME-prompt/)**: フォークプロジェクト全体の管理、IME対応機能の追加開発
-- **forked-repo/**: オリジナルのPrompt Lineアプリケーション本体
-
-### 開発時の注意点
-1. **Prompt Line本体の変更**: `forked-repo/` 内で作業し、`forked-repo/CLAUDE.md` の指示に従う
-2. **IME対応機能の追加**: 必要に応じてルートディレクトリに新しいコンポーネントを追加
-3. **ドキュメントの使い分け**:
-   - このファイル（ルートのCLAUDE.md）: フォーク固有の情報、日本語IME対応に関する指示
-   - `forked-repo/CLAUDE.md`: Prompt Line本体の開発ガイドライン（詳細な技術仕様）
+- **言語**: TypeScript
+- **フレームワーク**: VS Code Extension API
+- **UI**: Webview (HTML/CSS/JavaScript)
+- **対象環境**: Windows 10/11、VS Code 1.85.0以降
 
 ## 開発ワークフロー
 
 ### 初期セットアップ
+
 ```bash
-cd forked-repo
+# 依存関係のインストール
 npm install
-npm start
+
+# TypeScriptのコンパイル
+npm run compile
+```
+
+### 開発モードで実行
+
+```bash
+# ウォッチモードでTypeScriptをコンパイル
+npm run watch
+
+# VS Code内でF5キーを押して拡張機能開発ホストを起動
 ```
 
 ### よく使うコマンド
+
 ```bash
 # 開発
-cd forked-repo
-npm start                    # 開発モードでアプリを起動
+npm run watch              # ウォッチモードでコンパイル
+npm run compile            # 一度だけコンパイル
+
+# リント
+npm run lint               # ESLintでコードをチェック
 
 # テスト
-cd forked-repo
-npm test                     # 全テストを実行
-npm run test:watch          # ウォッチモードでテストを実行
-
-# ビルド
-cd forked-repo
-npm run build               # アプリケーションをビルド
-npm run compile             # 完全なコンパイル（TypeScript + Renderer + ネイティブツール）
+npm test                   # テストを実行（今後実装予定）
 ```
 
-## 特定の指示と注意事項
+## 実装機能
 
-### 日本語IME対応に関する重要事項
-1. **文字入力の扱い**:
-   - 日本語入力中の確定前文字列（変換中テキスト）の処理に注意
-   - IME確定イベントとキーボードイベントのタイミングを考慮
+### ✅ 実装済み
 
-2. **ショートカットキーの競合**:
-   - 日本語IMEのショートカットとアプリのショートカットが競合しないよう配慮
-   - 特にCmd/Ctrl+Enterなどの重要なキーバインドに注意
+1. **基本的なWebview UI**
+   - テキスト入力フィールド
+   - 送信・キャンセルボタン
+   - VS Codeテーマとの統合
 
-3. **テキストフィールド検出**:
-   - 日本語入力が有効なテキストフィールドを正確に検出
-   - macOSのAccessibility APIを使用した日本語入力状態の把握
+2. **日本語IME対応**
+   - `compositionstart`/`compositionend` イベントの処理
+   - 変換中の入力を適切に処理
+   - 全角トリガー文字（`／` `＠`）のサポート
 
-### コマンド機能の実装要件
+3. **基本的なトリガー検出**
+   - `/` または `／` でスラッシュコマンド候補を表示
+   - `@` または `＠` でメンション候補を表示
 
-#### 既存機能の拡張
-Prompt Lineには既に以下の機能が実装されています：
-- **スラッシュコマンド (`/`)**: マークダウンファイルベースのカスタムコマンドシステム
-- **ファイル検索 (`@`)**: ファイルパスの補完とファジーマッチング機能
-- **エージェント選択**: 利用可能なエージェントの選択機能
+4. **キーボードショートカット**
+   - `Ctrl+Shift+I`: プロンプト入力画面を開く
+   - `Ctrl+Enter`: プロンプトを送信
+   - `Esc`: キャンセル
+   - `↑`/`↓`: 候補リストのナビゲーション
 
-#### 追加実装が必要な機能
+### 🚧 実装予定
 
-1. **`/` スラッシュコマンドの改善**:
-   - Claude Code風のコマンドパレットUI
-   - コマンドの説明・プレビュー表示
-   - 日本語IME入力中でもコマンド候補を表示
-   - キーボードナビゲーション（↑↓キーで選択、Enterで実行）
+1. **スラッシュコマンドの拡張** (Phase 2)
+   - マークダウンファイルベースのカスタムコマンドシステム
+   - コマンドのプレビュー表示
    - コマンドの履歴・頻度による優先順位付け
 
-2. **`@` メンション機能の強化**:
-   - ファイルパス以外のメンション対象の追加：
-     - `@file`: ファイルパス（既存機能）
-     - `@code`: コードスニペット参照
-     - `@doc`: ドキュメント参照
-     - `@history`: 履歴からの引用
-   - メンションのプレビュー機能
-   - 複数メンションの管理
+2. **メンション機能の実装** (Phase 3)
+   - `@file`: ファイルパス参照（ファジーマッチング）
+   - `@code`: コードスニペット参照
+   - `@doc`: ドキュメント参照
+   - `@history`: 履歴からの引用
 
-3. **日本語IMEとの統合**:
-   - 日本語入力中でも `/` や `@` をトリガーとして認識
-   - 全角文字 `／` `＠` も半角と同様に扱う
-   - 変換確定前でもコマンド候補を表示
-   - IME確定後にコマンド実行
+3. **プレビュー機能** (Phase 4)
+   - メンション内容のホバープレビュー
+   - 参照ファイルの内容表示
 
-4. **UI/UX改善**:
-   - コマンド候補のポップアップ表示
-   - 候補リストのフィルタリング（インクリメンタルサーチ）
-   - ハイライト表示とシンタックスカラーリング
-   - ダークモード対応
+4. **設定とカスタマイズ**
+   - カスタムコマンドの追加
+   - キーボードショートカットのカスタマイズ
+   - UIテーマのカスタマイズ
 
-#### 実装の優先順位
-1. **Phase 1**: 日本語IMEでの `/` `@` 認識改善（全角対応）
-2. **Phase 2**: コマンドパレットUIの改善
-3. **Phase 3**: メンション機能の拡張（@code, @doc, @history）
-4. **Phase 4**: プレビュー機能とUIポリッシュ
+## 日本語IME対応の実装詳細
 
-#### 技術的考慮事項
-- 既存の `SlashCommandManager` と `FileSearchManager` を拡張
-- `forked-repo/src/renderer/` 内のマネージャークラスに機能追加
-- `forked-repo/src/handlers/mdsearch-handler.ts` でのバックエンド処理
-- テストケースの追加（`forked-repo/tests/`）
+### 重要なイベント
 
-### コミットメッセージ
+```javascript
+// IME入力開始
+input.addEventListener('compositionstart', () => {
+    isComposing = true;
+});
+
+// IME入力終了（確定）
+input.addEventListener('compositionend', () => {
+    isComposing = false;
+    // 確定後に処理を実行
+    setTimeout(() => {
+        handleInput();
+    }, 0);
+});
+
+// 通常の入力
+input.addEventListener('input', (e) => {
+    if (!isComposing) {
+        handleInput();
+    }
+});
+```
+
+### 全角・半角文字の扱い
+
+トリガー文字は全角・半角の両方に対応：
+- `/` と `／` → スラッシュコマンド
+- `@` と `＠` → メンション
+
+```javascript
+const lastChar = textBeforeCursor[textBeforeCursor.length - 1];
+
+if (lastChar === '/' || lastChar === '／') {
+    showSlashCommands();
+} else if (lastChar === '@' || lastChar === '＠') {
+    showMentions();
+}
+```
+
+## VS Code拡張機能API
+
+### Webview通信
+
+拡張機能本体とWebview間の通信：
+
+```typescript
+// Webview → 拡張機能
+vscode.postMessage({
+    command: 'submit',
+    text: text
+});
+
+// 拡張機能 → Webview
+this.panel.webview.onDidReceiveMessage(message => {
+    switch (message.command) {
+        case 'submit':
+            this.handleSubmit(message.text);
+            break;
+    }
+});
+```
+
+### コマンドの登録
+
+```typescript
+const disposable = vscode.commands.registerCommand('ime-prompt.open', () => {
+    provider.showWebview();
+});
+
+context.subscriptions.push(disposable);
+```
+
+## forked-repoとの関係
+
+`forked-repo/` ディレクトリには、オリジナルの [Prompt Line](https://github.com/nkmr-jp/prompt-line) (macOS Electronアプリ) のコードが含まれています。これは参考資料として保持されていますが、**このプロジェクトでは直接使用しません**。
+
+### 参考にする部分
+
+- コマンドシステムの設計思想
+- メンション機能のUI/UX
+- 日本語IME対応のアプローチ
+
+### 使用しない部分
+
+- Electron関連のコード
+- macOS Accessibility API
+- ネイティブSwiftツール
+
+## コミットメッセージ規約
+
 Angularコミットメッセージ規約に従ってください：
 
 ```
 <type>(<scope>): <subject>
 
+type:
+  - feat: 新機能
+  - fix: バグ修正
+  - docs: ドキュメントのみの変更
+  - style: コードの意味に影響を与えない変更（空白、フォーマットなど）
+  - refactor: バグ修正も機能追加もしないコード変更
+  - test: テストの追加や修正
+  - chore: ビルドプロセスやツールの変更
+
 例：
-feat(ime): 日本語入力時のカーソル位置検出を改善
-fix(input): IME確定時の二重入力を修正
-docs(readme): 日本語IME対応について説明を追加
+feat(webview): 日本語IME対応の入力フィールドを実装
+fix(ime): IME確定時の二重入力を修正
+docs(readme): セットアップ手順を追加
 ```
 
-### 上流リポジトリとの同期
-オリジナルリポジトリ: https://github.com/nkmr-jp/prompt-line
+## トラブルシューティング
 
-上流の変更を取り込む場合：
+### TypeScriptコンパイルエラー
+
 ```bash
-cd forked-repo
-git remote add upstream https://github.com/nkmr-jp/prompt-line.git
-git fetch upstream
-git merge upstream/main
+# node_modulesを削除して再インストール
+rm -rf node_modules
+npm install
+npm run compile
 ```
 
-### セキュリティに関する注意
-- forked-repo内のセキュリティガイドラインに従う
-- 日本語入力データの取り扱いに注意（個人情報保護）
-- ネイティブツールとの連携時のサニタイゼーション
+### 拡張機能が起動しない
 
-## 詳細な技術情報
+1. `out/` ディレクトリが生成されているか確認
+2. `npm run compile` を実行
+3. VS Codeを再起動
 
-Prompt Line本体の詳細な技術情報、アーキテクチャ、ビルドプロセス、トラブルシューティングについては、`forked-repo/CLAUDE.md` を参照してください。
+### デバッグ情報の確認
+
+1. 拡張機能開発ホストで `Ctrl+Shift+I` を押してDevToolsを開く
+2. Consoleタブでログを確認
+
+## 今後の展開
+
+### Phase 1: 基本機能の完成 ✅
+- [x] VS Code拡張機能の基本構造
+- [x] Webview UIの実装
+- [x] 日本語IME対応
+- [x] 基本的なトリガー検出
+
+### Phase 2: コマンドシステム
+- [ ] カスタムコマンドの読み込み
+- [ ] コマンドパレットUIの改善
+- [ ] コマンド履歴機能
+
+### Phase 3: メンション機能
+- [ ] ファイル検索とファジーマッチング
+- [ ] コードスニペット参照
+- [ ] ドキュメント参照
+- [ ] 履歴からの引用
+
+### Phase 4: 高度な機能
+- [ ] プレビュー機能
+- [ ] 設定画面
+- [ ] テーマのカスタマイズ
+- [ ] テストの追加
+
+## 参考リンク
+
+- [VS Code Extension API](https://code.visualstudio.com/api)
+- [Webview API](https://code.visualstudio.com/api/extension-guides/webview)
+- [Prompt Line (Original)](https://github.com/nkmr-jp/prompt-line)
+
+## ライセンス
+
+MIT
