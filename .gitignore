@@ -4,5 +4,5 @@ out/
 *.vsix
 .DS_Store
 
-# forked-repoは参考用（Git管理対象外）
+# forked-repoは参考用に保持
 /forked-repo

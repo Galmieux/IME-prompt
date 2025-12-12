@@ -44,6 +44,9 @@ export class PromptWebviewProvider {
                     case 'cancel':
                         this.panel?.dispose();
                         break;
+                    case 'sendToTerminal':
+                        this.sendToTerminalAndFocus(message.text);
+                        break;
                 }
             },
             undefined,
@@ -60,18 +63,47 @@ export class PromptWebviewProvider {
         );
     }
 
-    private handleSubmit(text: string) {
+    private async handleSubmit(text: string) {
         // アクティブなターミナルを取得
         const terminal = vscode.window.activeTerminal;
 
         if (terminal) {
-            // ターミナルにテキストを送信
-            terminal.sendText(text);
+            // ターミナルをアクティブにする
+            terminal.show();
 
-            // パネルを閉じる
-            this.panel?.dispose();
+            // テキストを送信（改行なし）
+            terminal.sendText(text, false);
+
+            // 少し待ってからEnterキーを送信
+            await new Promise(resolve => setTimeout(resolve, 50));
+
+            // Enterキーを送信（複数の方法を試す）
+            await vscode.commands.executeCommand('workbench.action.terminal.sendSequence', {
+                text: '\x0d'  // Carriage Return (Enter)
+            });
+
+            // 入力フィールドをクリアするメッセージをWebviewに送信
+            this.panel?.webview.postMessage({ command: 'clear' });
         } else {
             // ターミナルがない場合はエラーメッセージを表示
+            vscode.window.showWarningMessage('アクティブなターミナルがありません。Claude Codeを起動してください。');
+        }
+    }
+
+    private async sendToTerminalAndFocus(text: string) {
+        // アクティブなターミナルを取得
+        const terminal = vscode.window.activeTerminal;
+
+        if (terminal) {
+            // ターミナルにフォーカスを移動
+            terminal.show();
+
+            // テキストを送信（改行なし）
+            terminal.sendText(text, false);
+
+            // ターミナルにフォーカスを確実に移動
+            await vscode.commands.executeCommand('workbench.action.terminal.focus');
+        } else {
             vscode.window.showWarningMessage('アクティブなターミナルがありません。Claude Codeを起動してください。');
         }
     }
@@ -273,39 +305,38 @@ export class PromptWebviewProvider {
                 const text = input.value;
                 const cursorPos = input.selectionStart;
 
-                // カーソル位置の前の文字を取得
-                const textBeforeCursor = text.substring(0, cursorPos);
+                // 先頭文字がトリガー文字かチェック
+                const firstChar = text[0];
 
-                // / または @ のトリガーをチェック（全角も対応）
-                const lastChar = textBeforeCursor[textBeforeCursor.length - 1];
+                // 先頭に / @ # を入力した場合、ターミナルに送信してフォーカス移動
+                if (text.length === 1 && (
+                    firstChar === '/' || firstChar === '／' ||
+                    firstChar === '@' || firstChar === '＠' ||
+                    firstChar === '#' || firstChar === '＃'
+                )) {
+                    // 半角に正規化
+                    const normalizedChar = normalizeToHalfWidth(firstChar);
 
-                if (lastChar === '/' || lastChar === '／') {
-                    showSlashCommands();
-                } else if (lastChar === '@' || lastChar === '＠') {
-                    showMentions();
-                } else {
-                    hideSuggestions();
+                    // ターミナルに送信
+                    vscode.postMessage({
+                        command: 'sendToTerminal',
+                        text: normalizedChar
+                    });
+
+                    // 入力フィールドをクリア
+                    input.value = '';
+                    return;
                 }
             }
 
-            function showSlashCommands() {
-                // TODO: 実際のコマンドリストを取得
-                currentSuggestions = [
-                    { label: '/help', description: 'ヘルプを表示' },
-                    { label: '/clear', description: '入力内容をクリア' },
-                    { label: '/history', description: '履歴を表示' }
-                ];
-                renderSuggestions();
-            }
-
-            function showMentions() {
-                // TODO: 実際のメンション候補を取得
-                currentSuggestions = [
-                    { label: '@file', description: 'ファイルを参照' },
-                    { label: '@code', description: 'コードスニペットを参照' },
-                    { label: '@doc', description: 'ドキュメントを参照' }
-                ];
-                renderSuggestions();
+            // 全角を半角に変換
+            function normalizeToHalfWidth(char) {
+                const map = {
+                    '／': '/',
+                    '＠': '@',
+                    '＃': '#'
+                };
+                return map[char] || char;
             }
 
             function renderSuggestions() {
@@ -433,6 +464,18 @@ export class PromptWebviewProvider {
             // ボタンのイベントリスナー
             submitButton.addEventListener('click', submitPrompt);
             cancelButton.addEventListener('click', cancel);
+
+            // 拡張機能からのメッセージを受信
+            window.addEventListener('message', event => {
+                const message = event.data;
+                switch (message.command) {
+                    case 'clear':
+                        // 入力フィールドをクリア
+                        input.value = '';
+                        input.focus();
+                        break;
+                }
+            });
         })();
     </script>
 </body>
