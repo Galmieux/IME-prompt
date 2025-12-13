@@ -14,6 +14,8 @@ export class PromptWebviewProvider {
         // Webviewパネルが既に存在する場合は表示
         if (this.panel) {
             this.panel.reveal(column);
+            // 入力フィールドにフォーカスを当てる
+            this.panel.webview.postMessage({ command: 'focus' });
             return;
         }
 
@@ -121,7 +123,7 @@ export class PromptWebviewProvider {
     <title>IME Prompt</title>
     <style>
         body {
-            padding: 20px;
+            padding: 8px 20px 20px 20px;
             font-family: var(--vscode-font-family);
             color: var(--vscode-foreground);
             background-color: var(--vscode-editor-background);
@@ -132,9 +134,16 @@ export class PromptWebviewProvider {
             margin: 0 auto;
         }
 
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
         h1 {
             font-size: 24px;
-            margin-bottom: 20px;
+            margin: 0;
             color: var(--vscode-foreground);
         }
 
@@ -164,14 +173,13 @@ export class PromptWebviewProvider {
         .button-container {
             display: flex;
             gap: 10px;
-            justify-content: flex-end;
         }
 
         button {
-            padding: 8px 16px;
-            font-size: 14px;
+            padding: 6px 12px;
+            font-size: 12px;
             border: none;
-            border-radius: 4px;
+            border-radius: 3px;
             cursor: pointer;
             transition: background-color 0.2s;
         }
@@ -192,12 +200,6 @@ export class PromptWebviewProvider {
 
         .secondary-button:hover {
             background-color: var(--vscode-button-secondaryHoverBackground);
-        }
-
-        .info-text {
-            margin-top: 10px;
-            font-size: 12px;
-            color: var(--vscode-descriptionForeground);
         }
 
         .suggestion-list {
@@ -241,28 +243,26 @@ export class PromptWebviewProvider {
 </head>
 <body>
     <div class="container">
-        <h1>📝 IME Prompt</h1>
+        <div class="header">
+            <h1>📝 IME Prompt</h1>
+            <div class="button-container">
+                <button class="secondary-button" id="cancel-button">キャンセル</button>
+                <button class="primary-button" id="submit-button">送信 (Ctrl+Enter)</button>
+            </div>
+        </div>
 
         <div class="input-container">
             <textarea
                 id="prompt-input"
                 placeholder="プロンプトを入力してください...
 
-/ でコマンドを表示
-@ でファイルやコンテキストを参照"
+「Ctrl+Enter」：送信
+「/」「@」「#」：ターミナルへ
+「Ctrl+Shift+PageDown」：IME Promptに戻る"
                 autofocus
             ></textarea>
 
             <div id="suggestion-list" class="suggestion-list"></div>
-        </div>
-
-        <div class="button-container">
-            <button class="secondary-button" id="cancel-button">キャンセル</button>
-            <button class="primary-button" id="submit-button">送信 (Ctrl+Enter)</button>
-        </div>
-
-        <div class="info-text">
-            ヒント: Ctrl+Enter で送信、Esc でキャンセル
         </div>
     </div>
 
@@ -472,6 +472,10 @@ export class PromptWebviewProvider {
                     case 'clear':
                         // 入力フィールドをクリア
                         input.value = '';
+                        input.focus();
+                        break;
+                    case 'focus':
+                        // 入力フィールドにフォーカスを当てる
                         input.focus();
                         break;
                 }

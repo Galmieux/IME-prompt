@@ -12,13 +12,13 @@ IME Promptは、Claude Code風の `/コマンド` と `@メンション` 機能�
 - 🚀 **スラッシュコマンド**: `/` で始まるコマンドで素早くアクセス
 - 📎 **メンション機能**: `@` でファイル、コード、ドキュメントを参照
 - 🎨 **モダンなUI**: VS Codeのテーマに完全統合されたWebview UI
-- ⌨️ **キーボードショートカット**: `Ctrl+Shift+I` で即座に起動
+- ⌨️ **キーボードショートカット**: `Ctrl+Shift+PageDown` で即座に起動
 
 ## 使い方
 
 ### 基本的な使い方
 
-1. `Ctrl+Shift+I` (または `Cmd+Shift+I` on macOS) でプロンプト入力画面を開く
+1. `Ctrl+Shift+PageDown` (または `Cmd+Shift+PageDown` on macOS) でプロンプト入力画面を開く
 2. プロンプトを入力
 3. `Ctrl+Enter` で送信、または `Esc` でキャンセル
 
