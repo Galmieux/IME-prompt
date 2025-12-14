@@ -49,6 +49,12 @@ export class PromptWebviewProvider {
                     case 'sendToTerminal':
                         this.sendToTerminalAndFocus(message.text);
                         break;
+                    case 'sendArrowKey':
+                        this.sendArrowKeyToTerminal(message.direction);
+                        break;
+                    case 'sendEnterKey':
+                        this.sendEnterKeyToTerminal();
+                        break;
                 }
             },
             undefined,
@@ -107,6 +113,29 @@ export class PromptWebviewProvider {
             await vscode.commands.executeCommand('workbench.action.terminal.focus');
         } else {
             vscode.window.showWarningMessage('アクティブなターミナルがありません。Claude Codeを起動してください。');
+        }
+    }
+
+    private async sendArrowKeyToTerminal(direction: 'up' | 'down') {
+        const terminal = vscode.window.activeTerminal;
+
+        if (terminal) {
+            // 矢印キーのエスケープシーケンスを送信
+            const sequence = direction === 'up' ? '\x1b[A' : '\x1b[B';
+            await vscode.commands.executeCommand('workbench.action.terminal.sendSequence', {
+                text: sequence
+            });
+        }
+    }
+
+    private async sendEnterKeyToTerminal() {
+        const terminal = vscode.window.activeTerminal;
+
+        if (terminal) {
+            // Enterキーを送信
+            await vscode.commands.executeCommand('workbench.action.terminal.sendSequence', {
+                text: '\x0d'
+            });
         }
     }
 
@@ -256,9 +285,10 @@ export class PromptWebviewProvider {
                 id="prompt-input"
                 placeholder="プロンプトを入力してください...
 
-「Ctrl+Enter」：送信
+「Ctrl+Enter」：送信 / 選択決定（入力欄が空のとき）
 「/」「@」「#」：ターミナルへ
-「Ctrl+Shift+I」：IME Promptに戻る"
+「Ctrl+Shift+I」：IME Promptに戻る
+「↑」「↓」：選択移動（入力欄が空のとき）"
                 autofocus
             ></textarea>
 
@@ -425,14 +455,33 @@ export class PromptWebviewProvider {
                     }
                 }
 
-                // Ctrl+Enter で送信
+                // 入力フィールドが空の場合、矢印キーをターミナルに送信
+                // ※ suggestionList.style.display !== 'block' を使用（CSSで設定したdisplay:noneは空文字列になるため）
+                if (input.value === '' && suggestionList.style.display !== 'block') {
+                    if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        vscode.postMessage({ command: 'sendArrowKey', direction: 'up' });
+                        return;
+                    } else if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        vscode.postMessage({ command: 'sendArrowKey', direction: 'down' });
+                        return;
+                    }
+                }
+
+                // Ctrl+Enter で送信（入力欄が空の場合はターミナルにEnterを送信）
                 if (e.key === 'Enter' && e.ctrlKey) {
                     e.preventDefault();
-                    submitPrompt();
+                    if (input.value === '') {
+                        vscode.postMessage({ command: 'sendEnterKey' });
+                    } else {
+                        submitPrompt();
+                    }
+                    return;
                 }
 
                 // Escape でキャンセル（候補リストが表示されていない場合）
-                if (e.key === 'Escape' && suggestionList.style.display === 'none') {
+                if (e.key === 'Escape' && suggestionList.style.display !== 'block') {
                     e.preventDefault();
                     cancel();
                 }
