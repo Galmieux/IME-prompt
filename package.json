@@ -24,8 +24,8 @@
     "keybindings": [
       {
         "command": "ime-prompt.open",
-        "key": "ctrl+shift+pagedown",
-        "mac": "cmd+shift+pagedown"
+        "key": "ctrl+shift+i",
+        "mac": "cmd+shift+i"
       }
     ]
   },

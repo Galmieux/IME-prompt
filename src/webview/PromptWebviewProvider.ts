@@ -258,7 +258,7 @@ export class PromptWebviewProvider {
 
 「Ctrl+Enter」：送信
 「/」「@」「#」：ターミナルへ
-「Ctrl+Shift+PageDown」：IME Promptに戻る"
+「Ctrl+Shift+I」：IME Promptに戻る"
                 autofocus
             ></textarea>
 
