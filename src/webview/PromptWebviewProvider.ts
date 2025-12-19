@@ -290,7 +290,7 @@ export class PromptWebviewProvider {
             <h1>📝 IME Prompt</h1>
             <div class="button-container">
                 <button class="secondary-button" id="cancel-button">キャンセル</button>
-                <button class="primary-button" id="submit-button">送信 (Ctrl+Enter)</button>
+                <button class="primary-button" id="submit-button">送信 (Enter)</button>
             </div>
         </div>
 
@@ -299,7 +299,8 @@ export class PromptWebviewProvider {
                 id="prompt-input"
                 placeholder="プロンプトを入力してください...
 
-「Ctrl+Enter」：送信 / 選択決定（入力欄が空のとき）
+「Enter」：送信
+「Shift+Enter」：改行
 「/」「@」「#」：ターミナルへ
 「Ctrl+Shift+I」：IME Promptに戻る
 「↑」「↓」：選択移動（入力欄が空のとき）"
@@ -494,14 +495,11 @@ export class PromptWebviewProvider {
                     }
                 }
 
-                // Ctrl+Enter で送信（入力欄が空の場合はターミナルにEnterを送信）
-                if (e.key === 'Enter' && e.ctrlKey) {
+                // Enter で送信（Shiftなし）
+                // ※ 空の場合は上のブロックで処理されているため、ここは文字がある場合のみ到達する
+                if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
                     e.preventDefault();
-                    if (input.value === '') {
-                        vscode.postMessage({ command: 'sendEnterKey' });
-                    } else {
-                        submitPrompt();
-                    }
+                    submitPrompt();
                     return;
                 }
 
