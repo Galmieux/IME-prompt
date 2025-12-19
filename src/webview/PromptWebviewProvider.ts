@@ -4,7 +4,7 @@ import * as path from 'path';
 export class PromptWebviewProvider {
     private panel: vscode.WebviewPanel | undefined;
 
-    constructor(private readonly extensionUri: vscode.Uri) {}
+    constructor(private readonly extensionUri: vscode.Uri) { }
 
     public showWebview() {
         const column = vscode.window.activeTextEditor
@@ -54,6 +54,9 @@ export class PromptWebviewProvider {
                         break;
                     case 'sendEnterKey':
                         this.sendEnterKeyToTerminal();
+                        break;
+                    case 'sendShiftTab':
+                        this.sendShiftTabToTerminal();
                         break;
                 }
             },
@@ -135,6 +138,17 @@ export class PromptWebviewProvider {
             // Enterキーを送信
             await vscode.commands.executeCommand('workbench.action.terminal.sendSequence', {
                 text: '\x0d'
+            });
+        }
+    }
+
+    private async sendShiftTabToTerminal() {
+        const terminal = vscode.window.activeTerminal;
+
+        if (terminal) {
+            // Shift+Tabキーのエスケープシーケンスを送信
+            await vscode.commands.executeCommand('workbench.action.terminal.sendSequence', {
+                text: '\x1b[Z'
             });
         }
     }
@@ -429,6 +443,13 @@ export class PromptWebviewProvider {
 
             // キーボード操作
             input.addEventListener('keydown', (e) => {
+                // Shift+Tab は常にターミナルへ送信（フォーカス移動を防ぐ）
+                if (e.key === 'Tab' && e.shiftKey) {
+                    e.preventDefault();
+                    vscode.postMessage({ command: 'sendShiftTab' });
+                    return;
+                }
+
                 // 候補リストが表示されている場合
                 if (suggestionList.style.display === 'block') {
                     if (e.key === 'ArrowDown') {
@@ -455,7 +476,7 @@ export class PromptWebviewProvider {
                     }
                 }
 
-                // 入力フィールドが空の場合、矢印キーをターミナルに送信
+                // 入力フィールドが空の場合、矢印キーやEnterキーをターミナルに送信
                 // ※ suggestionList.style.display !== 'block' を使用（CSSで設定したdisplay:noneは空文字列になるため）
                 if (input.value === '' && suggestionList.style.display !== 'block') {
                     if (e.key === 'ArrowUp') {
@@ -465,6 +486,10 @@ export class PromptWebviewProvider {
                     } else if (e.key === 'ArrowDown') {
                         e.preventDefault();
                         vscode.postMessage({ command: 'sendArrowKey', direction: 'down' });
+                        return;
+                    } else if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.altKey) {
+                        e.preventDefault();
+                        vscode.postMessage({ command: 'sendEnterKey' });
                         return;
                     }
                 }
